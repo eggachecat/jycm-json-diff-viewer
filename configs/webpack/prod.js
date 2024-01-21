@@ -8,8 +8,8 @@ module.exports = merge(commonConfig, {
   mode: "production",
   output: {
     filename: "js/bundle.[contenthash].min.js",
-    path: resolve(__dirname, "../../dist"),
-    publicPath: "/",
+    path: resolve(__dirname, "../../docs"),
+    publicPath: "/jycm-viewer/",
   },
   devtool: "source-map",
   plugins: [],
