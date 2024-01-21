@@ -1,36 +1,5 @@
-# An example of using [react-jycm-viewer](https://github.com/eggachecat/react-jycm-viewer)
+# An example of using [react-jycm-viewer](https://github.com/eggachecat/react-jycm-viewer) and [jycm-js](https://github.com/eggachecat/jycm-js)
 
+Pure js-implemented and browser(node) based **configable** json diff viewer.
 
-This is a demo project for using [react-jycm-viewer](https://github.com/eggachecat/react-jycm-viewer) 
-created from the amazing template [React Webpack Typescript Starter](https://github.com/vikpe/react-webpack-typescript-starter)
-
-
-# Usage
-```bash
-yarn # install dependenices
-yarn start
-```
-
-# Included steps:
-
-## dependenices
-- yarn add react-jycm-viewer react-monacor-editor monaco-editor
-- yarn add -D monaco-editor-webpack-plugin
-- 
-
-## webpack config:
-- in `webpack/common.js`
-
-you can find the config for `monaco-editor-webpack-plugin`
-
-```js
-{
-    plugins: [
-        // ...
-        new MonacoWebpackPlugin({
-            languages: ["json"],
-        })
-    ]
-}
-
-```
+This is the source code of project [https://eggachecat.github.io/jycm-viewer](https://eggachecat.github.io/jycm-viewer)
