@@ -1,7 +1,12 @@
 const express = require('express');
 const app = express();
 const portNumber = 3000;
-const sourceDir = 'dist';
+const sourceDir = 'docs';
+
+app.use(function (req, res, next) {
+  req.url = req.url.replace("/jycm-viewer", "");
+  next();
+});
 
 app.use(express.static(sourceDir));
 
