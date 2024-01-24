@@ -2,4 +2,4 @@
 
 Pure js-implemented and browser(node) based **configable** json diff viewer.
 
-This is the source code of project [https://eggachecat.github.io/jycm-viewer](https://eggachecat.github.io/jycm-viewer)
+This is the source code of project [https://eggachecat.github.io/jycm-json-diff-viewer/](https://eggachecat.github.io/jycm-json-diff-viewer/)
