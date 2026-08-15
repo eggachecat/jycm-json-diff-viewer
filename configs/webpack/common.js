@@ -1,9 +1,7 @@
 // shared config (dev and prod)
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 
-const {
-  resolve
-} = require("path");
+const { resolve } = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
@@ -13,7 +11,8 @@ module.exports = {
   },
   context: resolve(__dirname, "../../src"),
   module: {
-    rules: [{
+    rules: [
+      {
         test: [/\.jsx?$/, /\.tsx?$/],
         use: ["babel-loader"],
         exclude: /node_modules/,
@@ -28,20 +27,18 @@ module.exports = {
       },
       {
         test: /\.(jpe?g|png|gif|svg)$/i,
-        use: [
-          "file-loader?hash=sha512&digest=hex&name=img/[contenthash].[ext]",
-          "image-webpack-loader?bypassOnDebug&optipng.optimizationLevel=7&gifsicle.interlaced=false",
-        ],
+        type: "asset/resource",
+        generator: { filename: "img/[contenthash][ext]" },
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: "index.html.ejs"
+      template: "index.html.ejs",
     }),
     new MonacoWebpackPlugin({
       languages: ["json"],
-    })
+    }),
   ],
   performance: {
     hints: false,

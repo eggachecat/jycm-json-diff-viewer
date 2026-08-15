@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 import MonacoEditor from "react-monaco-editor";
 import AutoSizer from "react-virtualized/dist/commonjs/AutoSizer";
@@ -16,7 +16,7 @@ export const JsonInput: React.FC<{
             height={`${height}px`}
             theme="vs"
             language="json"
-            value={JSON.stringify(JSON.parse(value), null, 2)}
+            value={value}
             onChange={(e) => {
               onChange(e);
             }}
@@ -25,6 +25,8 @@ export const JsonInput: React.FC<{
               automaticLayout: true,
               folding: true,
               wordWrap: "on",
+              minimap: { enabled: false },
+              fontSize: 13,
             }}
           />
         );
