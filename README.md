@@ -17,6 +17,7 @@ diff.
 - path-specific order-insensitive arrays
 - list item matching by a business identity field
 - custom operation metadata and structured diff output
+- business-level counts that separate raw changes, rule checks, and violations
 - aligned before/after navigation for moved values
 - live validation that keeps the latest valid comparison visible while editing
 

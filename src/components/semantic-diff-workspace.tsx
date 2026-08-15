@@ -61,15 +61,30 @@ function SemanticDiffWorkspace() {
   }, [leftInput, rightInput, rulesInput]);
 
   const stats = useMemo(() => {
-    const entries = Object.entries(comparison.diffResult).filter(
-      ([operation]) => operation !== "just4vis:pairs",
-    );
+    const standardEvents = new Set([
+      "dict:add",
+      "dict:remove",
+      "list:add",
+      "list:remove",
+      "value_changes",
+    ]);
+    const entries = Object.entries(comparison.diffResult);
+    const changes = entries
+      .filter(([event]) => standardEvents.has(event))
+      .reduce((total, [, records]) => total + records.length, 0);
+    const ruleRecords = entries
+      .filter(
+        ([event]) => event !== "just4vis:pairs" && !standardEvents.has(event),
+      )
+      .flatMap(([, records]) => records);
+    const violations = ruleRecords.filter(
+      (record) => record.pass === false,
+    ).length;
     return {
-      operations: entries.length,
-      changes: entries.reduce(
-        (total, [, records]) => total + records.length,
-        0,
-      ),
+      changes,
+      ruleChecks: ruleRecords.length,
+      violations,
+      equal: changes === 0 && violations === 0,
       pairs: comparison.diffResult["just4vis:pairs"]?.length || 0,
     };
   }, [comparison.diffResult]);
@@ -111,11 +126,17 @@ function SemanticDiffWorkspace() {
               : "Comparison is up to date"}
           </span>
           <div className="stats">
+            <span className={stats.equal ? "semantic-pass" : "semantic-fail"}>
+              {stats.equal ? "Semantically equal" : "Review required"}
+            </span>
             <span>
               <strong>{stats.changes}</strong> changes
             </span>
             <span>
-              <strong>{stats.operations}</strong> operation types
+              <strong>{stats.ruleChecks}</strong> rule checks
+            </span>
+            <span>
+              <strong>{stats.violations}</strong> violations
             </span>
             <span>
               <strong>{stats.pairs}</strong> aligned paths

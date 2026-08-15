@@ -245,6 +245,14 @@ h2 {
 .stats strong {
   color: var(--ink);
 }
+.stats .semantic-pass {
+  color: #166534;
+  font-weight: 750;
+}
+.stats .semantic-fail {
+  color: #991b1b;
+  font-weight: 750;
+}
 
 .input-grid {
   display: grid;
