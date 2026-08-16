@@ -44,10 +44,9 @@ function Demo() {
             <p className="eyebrow">Semantic JSON diff playground</p>
             <h1>Compare JSON by what your business actually means.</h1>
             <p className="hero-description">
-              Match array items by identity, ignore order only where it is safe,
-              and plug in domain-specific comparison rules. JYCM keeps noisy
-              structural changes out of the way so the important change is
-              obvious.
+              Author portable business policies, explain every rule outcome,
+              generate executable RFC 6902 patches, and inspect synchronized
+              paths. One browser workspace now covers design through delivery.
             </p>
             <div className="hero-actions">
               <a className="primary-action" href="#playground">
@@ -55,11 +54,11 @@ function Demo() {
               </a>
               <a
                 className="secondary-action"
-                href="https://github.com/eggachecat/jycm#custom-operator"
+                href="https://github.com/eggachecat/jycm/tree/master/skills/jycm-business-diff"
                 target="_blank"
                 rel="noreferrer"
               >
-                Read custom operator docs
+                Install the Agent Skill
               </a>
             </div>
           </div>
@@ -68,22 +67,25 @@ function Demo() {
               <span>01</span>
               <strong>Domain-aware</strong>
               <p>
-                Define equality, tolerance, identity, and ignored fields per
-                path.
+                Combine identity, tolerance, normalization, expectations,
+                ranges, ignored fields, and set semantics per path.
               </p>
             </article>
             <article>
               <span>02</span>
               <strong>Actionable</strong>
               <p>
-                Inspect machine-readable operations and synchronized visual
-                detail.
+                Review business summaries, named rule violations, affected
+                paths, and synchronized visual detail.
               </p>
             </article>
             <article>
               <span>03</span>
               <strong>Portable</strong>
-              <p>Use the same model from Python, JavaScript, CLI, or React.</p>
+              <p>
+                Generate, validate, copy, download, and apply semantic JSON
+                Patch from Python, JavaScript, CLI, or React.
+              </p>
             </article>
           </div>
         </section>
@@ -123,6 +125,41 @@ function Demo() {
         </div>
       </section>
 
+      <section className="agent-skill" aria-labelledby="agent-skill-title">
+        <div>
+          <p className="eyebrow">Agent-ready workflow</p>
+          <h2 id="agent-skill-title">
+            Give Codex, Claude, and other agents the business context.
+          </h2>
+          <p>
+            The portable JYCM Business Diff Skill teaches agents how to design
+            policies, collect fixtures, verify semantic patches, wire the UI,
+            and deploy safely—without hiding business logic in prompts.
+          </p>
+          <a
+            href="https://github.com/eggachecat/jycm/tree/master/skills/jycm-business-diff"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open skill documentation ↗
+          </a>
+        </div>
+        <div className="install-grid" aria-label="Agent Skill install commands">
+          <InstallCommand
+            label="Codex"
+            command="python skills/jycm-business-diff/scripts/install_skill.py --client codex"
+          />
+          <InstallCommand
+            label="Claude"
+            command="python skills/jycm-business-diff/scripts/install_skill.py --client claude"
+          />
+          <InstallCommand
+            label="Project agents"
+            command="python skills/jycm-business-diff/scripts/install_skill.py --client agents --project ."
+          />
+        </div>
+      </section>
+
       <footer>
         <span>JYCM · JSON You-Cha-Ma</span>
         <span>Open source under the MIT License</span>
@@ -136,6 +173,16 @@ const WorkspaceFallback = () => (
     <p className="eyebrow">Loading playground</p>
     <h2>Preparing the semantic diff editors…</h2>
   </section>
+);
+
+const InstallCommand: React.FC<{ label: string; command: string }> = ({
+  label,
+  command,
+}) => (
+  <article>
+    <span>{label}</span>
+    <code>{command}</code>
+  </article>
 );
 
 export default Demo;
