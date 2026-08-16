@@ -36,7 +36,9 @@ it("renders the product landing page before the editor chunk loads", () => {
 it("renders the semantic diff workspace", () => {
   const container = render(<SemanticDiffWorkspace />);
 
-  expect(container.textContent).toContain("Business rules");
+  expect(container.textContent).toContain("Business policy");
+  expect(container.textContent).toContain("Semantic JSON Patch");
+  expect(container.textContent).toContain("Rule outcomes");
   expect(container.textContent).toContain("Synchronized inspection");
   expect(container.querySelectorAll("textarea")).toHaveLength(5);
 

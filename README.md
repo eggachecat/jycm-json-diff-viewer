@@ -8,18 +8,24 @@ The browser demo and reference application for
 **Live:** https://eggachecat.github.io/jycm-json-diff-viewer/
 
 JYCM compares JSON using business semantics rather than raw text alone. The
-playground lets developers edit two JSON documents and a rule configuration,
-then inspect both the machine-readable operations and a synchronized visual
-diff.
+playground lets developers edit two JSON documents and a versioned business
+policy, then inspect the explanation, executable JSON Patch, machine-readable
+events, and synchronized visual diff.
 
 ## What the demo shows
 
-- path-specific order-insensitive arrays
-- list item matching by a business identity field
-- custom operation metadata and structured diff output
-- business-level counts that separate raw changes, rule checks, and violations
+- three editable real-world scenarios
+- all eight declarative business rules: ignore, unordered, match-by identity,
+  numeric tolerance, string normalization, expected change, expected existence,
+  and numeric range
+- named rule outcomes, affected paths, event counts, and business-level metrics
+- semantic RFC 6902 generation with optional safety tests
+- standalone Patch exploration with operation filters, pointer search, copy,
+  download, apply preview, and semantic verification
 - aligned before/after navigation for moved values
 - live validation that keeps the latest valid comparison visible while editing
+- Codex, Claude, and project-agent installation commands for the portable
+  JYCM Business Diff Skill
 
 Typical use cases include API regression testing, configuration review, audit
 logs, approval workflows, catalog changes, and any nested JSON comparison where
@@ -40,6 +46,13 @@ pnpm run check
 
 The check runs lint, tests, and the optimized webpack build used by GitHub
 Pages.
+
+## Publish GitHub Pages
+
+GitHub Pages serves `docs/` from the `gh-pages` branch. Build `main`, copy the
+contents of `dist/` into that branch's `docs/` directory, commit, and push.
+Wait for the Pages build to report `built` before considering a release
+complete.
 
 ## Project roles
 
