@@ -292,6 +292,40 @@ function SemanticDiffWorkspace() {
         </div>
       </section>
 
+      <section className="visual-section" aria-labelledby="visual-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Git-style visual diff</p>
+            <h2 id="visual-title">
+              See every removed line in red and every added line in green.
+            </h2>
+          </div>
+          <div className="diff-legend" aria-label="Diff color legend">
+            <span className="diff-legend__removed">− Removed / before</span>
+            <span className="diff-legend__added">+ Added / after</span>
+            <span className="diff-legend__ignored">Ignored by policy</span>
+          </div>
+        </div>
+        <p className="visual-guidance">
+          Click a highlighted line to inspect its exact JYCM event and paired
+          path. Modified values are shown as a red removal on the left and a
+          green addition on the right.
+        </p>
+        <JYCMContext.Provider value={context}>
+          <div className="viewer-layout">
+            <div className="viewer-main">
+              <JYCMRender leftTitle="− Before" rightTitle="+ After" />
+            </div>
+            <aside className="detail-panel" aria-label="Selected diff detail">
+              <div className="panel-heading">Selected change</div>
+              <div className="detail-editor">
+                <DiffDetailViewer />
+              </div>
+            </aside>
+          </div>
+        </JYCMContext.Provider>
+      </section>
+
       <section className="patch-section" aria-labelledby="patch-title">
         <div className="section-heading">
           <div>
@@ -315,30 +349,6 @@ function SemanticDiffWorkspace() {
           <code>test</code>
         </p>
         <PatchWorkbench patch={comparison.patch} onApply={applyPatch} />
-      </section>
-
-      <section className="visual-section" aria-labelledby="visual-title">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Synchronized inspection</p>
-            <h2 id="visual-title">
-              Follow each operation through aligned before and after paths.
-            </h2>
-          </div>
-        </div>
-        <JYCMContext.Provider value={context}>
-          <div className="viewer-layout">
-            <div className="viewer-main">
-              <JYCMRender leftTitle="Before" rightTitle="After" />
-            </div>
-            <aside className="detail-panel" aria-label="Selected diff detail">
-              <div className="panel-heading">Selected change</div>
-              <div className="detail-editor">
-                <DiffDetailViewer />
-              </div>
-            </aside>
-          </div>
-        </JYCMContext.Provider>
       </section>
     </>
   );
