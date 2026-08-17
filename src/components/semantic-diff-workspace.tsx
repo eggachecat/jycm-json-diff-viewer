@@ -4,14 +4,18 @@ import { JYCMContext, JYCMRender, useJYCM } from "react-jycm-viewer";
 
 import {
   BusinessDiffPolicy,
+  BusinessDiffFunction,
+  BusinessFunctionEvaluation,
   BusinessDiffSummary,
   JsonPatchOperation,
   applyJsonPatch,
+  compileBusinessFunction,
   makeSemanticJsonPatch,
   summarizeBusinessDiff,
 } from "../business-diff";
 import { DiffDetailViewer } from "./jycm-diff-detail-viewer-simple";
-import { JsonInput } from "./json-input";
+import { GitDiffViewer } from "./git-diff-viewer";
+import { CodeInput, JsonInput } from "./json-input";
 import { PatchWorkbench } from "./patch-workbench";
 import { demoScenarios } from "./render-case/business-cases";
 import { JYCMResultViewer } from "./jycm-result-viewer";
@@ -27,25 +31,60 @@ type ValidComparison = {
   diffResult: Record<string, any[]>;
   summary: BusinessDiffSummary;
   patch: JsonPatchOperation[];
+  businessFunction?: BusinessDiffFunction;
+  businessFunctionEvaluations: BusinessFunctionEvaluation[];
 };
 
 const firstScenario = demoScenarios[0];
 const initialLeft = pretty(firstScenario.before);
 const initialRight = pretty(firstScenario.after);
 const initialPolicy = pretty(firstScenario.policy);
+const initialBusinessFunction = firstScenario.businessFunction;
 
 const compare = (
   left: string,
   right: string,
   policyInput: string,
+  businessFunctionInput: string,
+  businessFunctionEnabled: boolean,
   includeTests: boolean,
 ): ValidComparison => {
   const leftValue = JSON.parse(left);
   const rightValue = JSON.parse(right);
   const policy = new BusinessDiffPolicy(JSON.parse(policyInput));
   const differ = policy.build(leftValue, rightValue);
-  const equal = differ.diff();
+  differ.diff();
   const diffResult = differ.to_dict(false) as Record<string, any[]>;
+  const businessFunction = businessFunctionEnabled
+    ? compileBusinessFunction(businessFunctionInput)
+    : undefined;
+  const businessFunctionEvaluations: BusinessFunctionEvaluation[] = [];
+  const patch = makeSemanticJsonPatch(
+    differ,
+    includeTests,
+    businessFunction,
+    (evaluation) => businessFunctionEvaluations.push(evaluation),
+  );
+  if (businessFunctionEvaluations.length) {
+    diffResult["operator:javascript"] = businessFunctionEvaluations.map(
+      (evaluation) => ({
+        left: evaluation.left,
+        right: evaluation.right,
+        left_path: evaluation.path,
+        right_path: evaluation.path,
+        pass: evaluation.equal,
+        reason: evaluation.reason,
+        severity: evaluation.severity || "info",
+        rule: "custom-javascript",
+      }),
+    );
+  }
+  const summary = summarizeBusinessDiff(diffResult, false);
+  const mutationCount = patch.filter(
+    (operation) => operation.op !== "test",
+  ).length;
+  summary.change_count = mutationCount;
+  summary.equal = mutationCount === 0 && summary.rule_violation_count === 0;
   return {
     left,
     right,
@@ -53,8 +92,10 @@ const compare = (
     rightValue,
     policy,
     diffResult,
-    summary: summarizeBusinessDiff(diffResult, equal),
-    patch: makeSemanticJsonPatch(differ, includeTests),
+    summary,
+    patch,
+    businessFunction,
+    businessFunctionEvaluations,
   };
 };
 
@@ -62,18 +103,44 @@ function SemanticDiffWorkspace() {
   const [leftInput, setLeftInput] = useState(initialLeft);
   const [rightInput, setRightInput] = useState(initialRight);
   const [policyInput, setPolicyInput] = useState(initialPolicy);
+  const [businessFunctionInput, setBusinessFunctionInput] = useState(
+    initialBusinessFunction,
+  );
+  const [businessFunctionEnabled, setBusinessFunctionEnabled] = useState(true);
   const [activeScenario, setActiveScenario] = useState(firstScenario.id);
   const [includeTests, setIncludeTests] = useState(false);
+  const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<ValidComparison>(() =>
-    compare(initialLeft, initialRight, initialPolicy, false),
+    compare(
+      initialLeft,
+      initialRight,
+      initialPolicy,
+      initialBusinessFunction,
+      true,
+      false,
+    ),
   );
+  const [expandedEditors, setExpandedEditors] = useState({
+    before: true,
+    after: true,
+    policy: false,
+    javascript: true,
+    events: false,
+  });
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         setComparison(
-          compare(leftInput, rightInput, policyInput, includeTests),
+          compare(
+            leftInput,
+            rightInput,
+            policyInput,
+            businessFunctionInput,
+            businessFunctionEnabled,
+            includeTests,
+          ),
         );
         setError(null);
       } catch (cause) {
@@ -85,7 +152,14 @@ function SemanticDiffWorkspace() {
       }
     }, 180);
     return () => window.clearTimeout(timer);
-  }, [includeTests, leftInput, policyInput, rightInput]);
+  }, [
+    businessFunctionEnabled,
+    businessFunctionInput,
+    includeTests,
+    leftInput,
+    policyInput,
+    rightInput,
+  ]);
 
   const context = useJYCM({
     leftJsonStr: comparison.left,
@@ -100,7 +174,25 @@ function SemanticDiffWorkspace() {
     setLeftInput(pretty(scenario.before));
     setRightInput(pretty(scenario.after));
     setPolicyInput(pretty(scenario.policy));
+    setBusinessFunctionInput(scenario.businessFunction);
+    setBusinessFunctionEnabled(true);
     setIncludeTests(false);
+  };
+
+  const toggleEditor = (editor: keyof typeof expandedEditors) => {
+    setExpandedEditors((current) => ({
+      ...current,
+      [editor]: !current[editor],
+    }));
+  };
+
+  const documentsExpanded = expandedEditors.before || expandedEditors.after;
+  const toggleDocuments = () => {
+    setExpandedEditors((current) => ({
+      ...current,
+      before: !documentsExpanded,
+      after: !documentsExpanded,
+    }));
   };
 
   const applyPatch = () => {
@@ -109,8 +201,21 @@ function SemanticDiffWorkspace() {
       document,
       comparison.rightValue,
     );
-    const targetPolicyPass = verificationDiffer.diff();
-    const remainingPatch = makeSemanticJsonPatch(verificationDiffer);
+    verificationDiffer.diff();
+    const verificationSummary = summarizeBusinessDiff(
+      verificationDiffer.to_dict(false) as Record<string, any[]>,
+      false,
+    );
+    const verificationEvaluations: BusinessFunctionEvaluation[] = [];
+    const remainingPatch = makeSemanticJsonPatch(
+      verificationDiffer,
+      false,
+      comparison.businessFunction,
+      (evaluation) => verificationEvaluations.push(evaluation),
+    );
+    const targetPolicyPass =
+      verificationSummary.rule_violation_count === 0 &&
+      verificationEvaluations.every((evaluation) => evaluation.equal);
     const semanticallyValid = remainingPatch.length === 0;
     return {
       semantically_valid: semanticallyValid,
@@ -135,13 +240,24 @@ function SemanticDiffWorkspace() {
               Edit documents and policy. Explain, patch, and verify instantly.
             </h2>
           </div>
-          <button
-            type="button"
-            className="reset-button"
-            onClick={() => loadScenario(firstScenario.id)}
-          >
-            Reset example
-          </button>
+          <div className="workspace-actions">
+            <button
+              type="button"
+              className="reset-button"
+              onClick={toggleDocuments}
+            >
+              {documentsExpanded
+                ? "Collapse Before / After"
+                : "Expand Before / After"}
+            </button>
+            <button
+              type="button"
+              className="reset-button"
+              onClick={() => loadScenario(firstScenario.id)}
+            >
+              Reset example
+            </button>
+          </div>
         </div>
 
         <div className="scenario-picker" aria-label="Demo scenarios">
@@ -192,23 +308,78 @@ function SemanticDiffWorkspace() {
         </div>
 
         <div className="input-grid">
-          <EditorCard title="Before JSON" subtitle="Expected or previous value">
+          <EditorCard
+            title="Before JSON"
+            subtitle="Expected or previous value"
+            expanded={expandedEditors.before}
+            onToggle={() => toggleEditor("before")}
+          >
             <JsonInput value={leftInput} onChange={setLeftInput} />
           </EditorCard>
-          <EditorCard title="After JSON" subtitle="Actual or proposed value">
+          <EditorCard
+            title="After JSON"
+            subtitle="Actual or proposed value"
+            expanded={expandedEditors.after}
+            onToggle={() => toggleEditor("after")}
+          >
             <JsonInput value={rightInput} onChange={setRightInput} />
           </EditorCard>
           <EditorCard
             title="Business policy"
             subtitle="Versioned, portable, JSON-serializable rules"
+            expanded={expandedEditors.policy}
+            onToggle={() => toggleEditor("policy")}
           >
             <JsonInput value={policyInput} onChange={setPolicyInput} />
           </EditorCard>
           <EditorCard
             title="Raw event dictionary"
             subtitle="Stable machine-readable integration output"
+            expanded={expandedEditors.events}
+            onToggle={() => toggleEditor("events")}
           >
             <JYCMResultViewer jycmResult={comparison.diffResult} />
+          </EditorCard>
+          <EditorCard
+            title="JavaScript business function"
+            subtitle="Live path-level semantics — runs locally in this tab"
+            expanded={expandedEditors.javascript}
+            onToggle={() => toggleEditor("javascript")}
+            wide
+          >
+            <div className="function-toolbar">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={businessFunctionEnabled}
+                  onChange={(event) =>
+                    setBusinessFunctionEnabled(event.target.checked)
+                  }
+                />
+                Execute custom function
+              </label>
+              <span>
+                {comparison.businessFunctionEvaluations.length} decisions ·
+                return
+                <code>true</code>, <code>false</code>, or <code>undefined</code>
+              </span>
+            </div>
+            <div className="function-api" aria-label="Business function API">
+              <code>path</code>
+              <code>pointer</code>
+              <code>left</code>
+              <code>right</code>
+              <code>leftExists</code>
+              <code>rightExists</code>
+              <span>Trusted code only — executes in the current page.</span>
+            </div>
+            <div className="function-editor-frame">
+              <CodeInput
+                language="javascript"
+                value={businessFunctionInput}
+                onChange={setBusinessFunctionInput}
+              />
+            </div>
           </EditorCard>
         </div>
       </section>
@@ -307,23 +478,44 @@ function SemanticDiffWorkspace() {
           </div>
         </div>
         <p className="visual-guidance">
-          Click a highlighted line to inspect its exact JYCM event and paired
-          path. Modified values are shown as a red removal on the left and a
-          green addition on the right.
+          This renderer owns its colors instead of depending on editor-theme
+          decorations. Modified values are always a red removal followed by a
+          green addition, while unchanged blocks collapse automatically.
         </p>
-        <JYCMContext.Provider value={context}>
-          <div className="viewer-layout">
-            <div className="viewer-main">
-              <JYCMRender leftTitle="− Before" rightTitle="+ After" />
-            </div>
-            <aside className="detail-panel" aria-label="Selected diff detail">
-              <div className="panel-heading">Selected change</div>
-              <div className="detail-editor">
-                <DiffDetailViewer />
-              </div>
-            </aside>
-          </div>
-        </JYCMContext.Provider>
+        <GitDiffViewer before={comparison.left} after={comparison.right} />
+        <details
+          className="advanced-inspector"
+          open={advancedInspectorOpen}
+          onToggle={(event) =>
+            setAdvancedInspectorOpen(event.currentTarget.open)
+          }
+        >
+          <summary>Open paired-path inspector</summary>
+          {advancedInspectorOpen && (
+            <>
+              <p>
+                Explore JYCM&apos;s synchronized tree paths and click a line for
+                the raw event payload.
+              </p>
+              <JYCMContext.Provider value={context}>
+                <div className="viewer-layout">
+                  <div className="viewer-main">
+                    <JYCMRender leftTitle="− Before" rightTitle="+ After" />
+                  </div>
+                  <aside
+                    className="detail-panel"
+                    aria-label="Selected diff detail"
+                  >
+                    <div className="panel-heading">Selected change</div>
+                    <div className="detail-editor">
+                      <DiffDetailViewer />
+                    </div>
+                  </aside>
+                </div>
+              </JYCMContext.Provider>
+            </>
+          )}
+        </details>
       </section>
 
       <section className="patch-section" aria-labelledby="patch-title">
@@ -348,7 +540,11 @@ function SemanticDiffWorkspace() {
           <code>replace</code> <code>move</code> <code>copy</code>{" "}
           <code>test</code>
         </p>
-        <PatchWorkbench patch={comparison.patch} onApply={applyPatch} />
+        <PatchWorkbench
+          patch={comparison.patch}
+          onApply={applyPatch}
+          onLoadNonEmptyExample={() => loadScenario(firstScenario.id)}
+        />
       </section>
     </>
   );
@@ -368,13 +564,28 @@ const Metric: React.FC<{
 const EditorCard: React.FC<{
   title: string;
   subtitle: string;
-}> = ({ title, subtitle, children }) => (
-  <article className="editor-card">
-    <header>
-      <strong>{title}</strong>
-      <span>{subtitle}</span>
-    </header>
-    <div className="editor-frame">{children}</div>
+  expanded: boolean;
+  onToggle: () => void;
+  wide?: boolean;
+}> = ({ title, subtitle, expanded, onToggle, wide = false, children }) => (
+  <article
+    className={`editor-card${wide ? " editor-card--wide" : ""}${
+      expanded ? " editor-card--expanded" : " editor-card--collapsed"
+    }`}
+  >
+    <button
+      type="button"
+      className="editor-card__toggle"
+      aria-expanded={expanded}
+      onClick={onToggle}
+    >
+      <span>
+        <strong>{title}</strong>
+        <small>{subtitle}</small>
+      </span>
+      <b aria-hidden="true">{expanded ? "−" : "+"}</b>
+    </button>
+    {expanded && <div className="editor-frame">{children}</div>}
   </article>
 );
 

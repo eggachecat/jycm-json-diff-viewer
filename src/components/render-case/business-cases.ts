@@ -5,7 +5,26 @@ export type DemoScenario = {
   before: unknown;
   after: unknown;
   policy: unknown;
+  businessFunction: string;
 };
+
+const reconciliationFunction = `({ path, left, right }) => {
+  // Return undefined to defer to the JSON policy and normal diff engine.
+  if (/orders->\\[\\d+\\]->state$/.test(path)) {
+    const allowed = left === "pending" && ["paid", "new"].includes(right);
+    return {
+      equal: allowed,
+      reason: allowed ? "Allowed order workflow transition" : "Unexpected state transition",
+      severity: allowed ? "info" : "error"
+    };
+  }
+  return undefined;
+}`;
+
+const noCustomFunction = `({ path, left, right }) => {
+  // Add a path-specific decision here. Undefined delegates to the JSON policy.
+  return undefined;
+}`;
 
 const reconciliationPolicy = {
   version: 1,
@@ -97,6 +116,7 @@ export const demoScenarios: DemoScenario[] = [
       ],
     },
     policy: reconciliationPolicy,
+    businessFunction: reconciliationFunction,
   },
   {
     id: "api-contract",
@@ -134,6 +154,7 @@ export const demoScenarios: DemoScenario[] = [
         },
       ],
     },
+    businessFunction: noCustomFunction,
   },
   {
     id: "semantic-equality",
@@ -173,5 +194,37 @@ export const demoScenarios: DemoScenario[] = [
         },
       ],
     },
+    businessFunction: noCustomFunction,
+  },
+  {
+    id: "custom-javascript",
+    label: "Custom JavaScript",
+    description:
+      "Write a function that changes semantic equality and Patch output live.",
+    before: {
+      invoice_id: "INV-42",
+      total: 100,
+      status: "draft",
+      generated_at: "2026-08-16T10:00:00Z",
+    },
+    after: {
+      invoice_id: "INV-42",
+      total: 100.04,
+      status: "approved",
+      generated_at: "2026-08-17T10:00:00Z",
+    },
+    policy: { version: 1, name: "custom-code-only", rules: [] },
+    businessFunction: `({ path, left, right }) => {
+  if (path === "generated_at") {
+    return { equal: true, reason: "Generated timestamps are volatile" };
+  }
+  if (path === "total") {
+    return {
+      equal: Math.abs(left - right) <= 0.05,
+      reason: "Invoice totals may differ by five cents"
+    };
+  }
+  return undefined;
+}`,
   },
 ];

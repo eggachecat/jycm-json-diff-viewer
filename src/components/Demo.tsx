@@ -44,9 +44,9 @@ function Demo() {
             <p className="eyebrow">Semantic JSON diff playground</p>
             <h1>Compare JSON by what your business actually means.</h1>
             <p className="hero-description">
-              Author portable business policies, explain every rule outcome,
-              generate executable RFC 6902 patches, and inspect synchronized
-              paths. One browser workspace now covers design through delivery.
+              Author portable policies or live JavaScript business functions,
+              inspect a real Git-style diff, explain every decision, and
+              generate executable RFC 6902 patches in one browser workspace.
             </p>
             <div className="hero-actions">
               <a className="primary-action" href="#playground">
@@ -68,15 +68,16 @@ function Demo() {
               <strong>Domain-aware</strong>
               <p>
                 Combine identity, tolerance, normalization, expectations,
-                ranges, ignored fields, and set semantics per path.
+                ranges, ignored fields, set semantics, and custom JavaScript
+                decisions per path.
               </p>
             </article>
             <article>
               <span>02</span>
               <strong>Actionable</strong>
               <p>
-                Review business summaries, named rule violations, affected
-                paths, and synchronized visual detail.
+                Review guaranteed red/green line diffs, named rule outcomes,
+                affected paths, and synchronized visual detail.
               </p>
             </article>
             <article>

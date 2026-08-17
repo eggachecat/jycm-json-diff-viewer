@@ -32,7 +32,8 @@ const validate = (patch: JsonPatchOperation[]) => {
 export const PatchWorkbench: React.FC<{
   patch: JsonPatchOperation[];
   onApply: () => unknown;
-}> = ({ patch, onApply }) => {
+  onLoadNonEmptyExample?: () => void;
+}> = ({ patch, onApply, onLoadNonEmptyExample }) => {
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -139,7 +140,16 @@ export const PatchWorkbench: React.FC<{
 
       {patch.length === 0 ? (
         <div className="patch-empty">
-          No operations — the documents are semantically equal.
+          <strong>Empty by design — not broken.</strong>
+          <span>
+            The raw Git diff can still contain red and green lines, but the JSON
+            policy and JavaScript function accepted every difference.
+          </span>
+          {onLoadNonEmptyExample && (
+            <button type="button" onClick={onLoadNonEmptyExample}>
+              Load a non-empty Patch example
+            </button>
+          )}
         </div>
       ) : (
         <>

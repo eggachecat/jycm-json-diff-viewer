@@ -9,12 +9,12 @@ The browser demo and reference application for
 
 JYCM compares JSON using business semantics rather than raw text alone. The
 playground lets developers edit two JSON documents and a versioned business
-policy, then inspect the explanation, executable JSON Patch, machine-readable
-events, and synchronized visual diff.
+policy or a live JavaScript decision function, then inspect the explanation,
+executable JSON Patch, machine-readable events, and Git-style visual diff.
 
 ## What the demo shows
 
-- three editable real-world scenarios
+- four editable real-world scenarios, including a custom-JavaScript lab
 - all eight declarative business rules: ignore, unordered, match-by identity,
   numeric tolerance, string normalization, expected change, expected existence,
   and numeric range
@@ -22,7 +22,12 @@ events, and synchronized visual diff.
 - semantic RFC 6902 generation with optional safety tests
 - standalone Patch exploration with operation filters, pointer search, copy,
   download, apply preview, and semantic verification
-- aligned before/after navigation for moved values
+- a first-class line diff with guaranteed red removals, green additions,
+  line numbers, context folding, and full-document expansion
+- collapsible Before, After, policy, JavaScript, and raw-event editors
+- path-level JavaScript functions whose boolean or structured decisions change
+  semantic equality, explanations, and generated Patch output immediately
+- optional aligned before/after navigation for advanced paired-path inspection
 - live validation that keeps the latest valid comparison visible while editing
 - Codex, Claude, and project-agent installation commands for the portable
   JYCM Business Diff Skill
@@ -53,6 +58,16 @@ GitHub Pages serves `docs/` from the `gh-pages` branch. Build `main`, copy the
 contents of `dist/` into that branch's `docs/` directory, commit, and push.
 Wait for the Pages build to report `built` before considering a release
 complete.
+
+## JavaScript business functions
+
+The playground accepts a function expression or arrow function. It receives
+`path`, `pointer`, `left`, `right`, `leftExists`, and `rightExists`. Return
+`true` to treat a path as semantically equal, `false` to require a change, a
+structured `{ equal, reason, severity }` decision for explanation output, or
+`undefined` to defer to the declarative policy and normal diff engine.
+
+The function runs in the current browser tab. Only execute code you trust.
 
 ## Project roles
 
