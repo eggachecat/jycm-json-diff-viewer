@@ -25,6 +25,10 @@ describe("business diff integration", () => {
       rule: "risk-envelope",
       right_invalid: true,
     });
+    expect(result["dict:remove"]).toHaveLength(1);
+    expect(result["dict:add"]).toHaveLength(1);
+    expect(patch.some((operation) => operation.op === "remove")).toBe(true);
+    expect(patch.some((operation) => operation.op === "add")).toBe(true);
     expect(patch.some((operation) => operation.op === "test")).toBe(true);
     const verificationDiffer = policy.build(patched, scenario.after);
     expect(verificationDiffer.diff()).toBe(false);

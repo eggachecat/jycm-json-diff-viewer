@@ -319,7 +319,46 @@ h2 {
 }
 
 .visual-section {
-  padding-top: 16px;
+  padding-top: 24px;
+}
+
+.visual-guidance {
+  max-width: 780px;
+  margin: -12px 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.diff-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.diff-legend span {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font: 700 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.diff-legend__removed {
+  color: #8c1d18;
+  border-color: #ffb8b5 !important;
+  background: #ffebe9;
+}
+
+.diff-legend__added {
+  color: #116329;
+  border-color: #a8d5b5 !important;
+  background: #dafbe1;
+}
+
+.diff-legend__ignored {
+  color: #57606a;
+  border-color: #d0d7de !important;
+  background: #f6f8fa;
 }
 
 .explain-section,
@@ -631,6 +670,45 @@ h2 {
   min-width: 0;
   height: 100%;
 }
+
+/* Restore unmistakable Git-style semantics over the viewer package defaults. */
+.viewer-main .json-diff-editor .value_changes.value_changes--left,
+.viewer-main .json-diff-editor .dict-remove.dict-remove--left,
+.viewer-main .json-diff-editor .list-remove.list-remove--left {
+  border-left: 4px solid #cf222e !important;
+  background: #ffebe9 !important;
+}
+
+.viewer-main .json-diff-editor .value_changes.value_changes--right,
+.viewer-main .json-diff-editor .dict-add.dict-add--right,
+.viewer-main .json-diff-editor .list-add.list-add--right {
+  border-left: 4px solid #1a7f37 !important;
+  background: #dafbe1 !important;
+}
+
+.viewer-main .json-diff-editor .ignore {
+  border-left: 4px solid #8c959f !important;
+  background: #f6f8fa !important;
+  opacity: 0.78;
+}
+
+.viewer-main .json-diff-editor .ycm-highlight {
+  box-shadow: inset 0 0 0 2px #0969da !important;
+}
+
+.viewer-main > div > div > div > div:first-child > .title {
+  color: #8c1d18;
+  border-bottom: 1px solid #ffb8b5;
+  background: #ffebe9;
+  font-weight: 800;
+}
+
+.viewer-main > div > div > div > div:last-child > .title {
+  color: #116329;
+  border-bottom: 1px solid #a8d5b5;
+  background: #dafbe1;
+  font-weight: 800;
+}
 .detail-panel {
   min-width: 0;
   display: flex;
@@ -773,6 +851,9 @@ footer {
   .status-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .diff-legend {
+    justify-content: flex-start;
   }
   .stats {
     width: 100%;

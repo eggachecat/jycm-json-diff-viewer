@@ -72,6 +72,7 @@ export const demoScenarios: DemoScenario[] = [
       generated_at: "2026-08-16T09:00:00Z",
       revision: 7,
       status: "ready",
+      legacy_code: "manual-review",
       risk_score: 3,
       orders: [
         {
@@ -87,6 +88,7 @@ export const demoScenarios: DemoScenario[] = [
       generated_at: "2026-08-17T09:00:00Z",
       revision: 8,
       status: "ready",
+      reviewed_by: "policy-engine",
       risk_score: 12,
       orders: [
         { id: "B-200", customer: " beta ", amount: 50.1, state: "paid" },

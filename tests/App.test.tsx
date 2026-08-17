@@ -39,7 +39,9 @@ it("renders the semantic diff workspace", () => {
   expect(container.textContent).toContain("Business policy");
   expect(container.textContent).toContain("Semantic JSON Patch");
   expect(container.textContent).toContain("Rule outcomes");
-  expect(container.textContent).toContain("Synchronized inspection");
+  expect(container.textContent).toContain("Git-style visual diff");
+  expect(container.textContent).toContain("− Removed / before");
+  expect(container.textContent).toContain("+ Added / after");
   expect(container.querySelectorAll("textarea")).toHaveLength(5);
 
   cleanup(container);
