@@ -3,10 +3,12 @@ import React from "react";
 import MonacoEditor from "react-monaco-editor";
 import AutoSizer from "react-virtualized/dist/commonjs/AutoSizer";
 
-export const JsonInput: React.FC<{
+export const CodeInput: React.FC<{
   value: string;
   onChange: (v: string) => void;
-}> = ({ value, onChange }) => {
+  language?: "json" | "javascript";
+  readOnly?: boolean;
+}> = ({ value, onChange, language = "json", readOnly = false }) => {
   return (
     <AutoSizer>
       {({ height, width }) => {
@@ -15,13 +17,13 @@ export const JsonInput: React.FC<{
             width={`${width}px`}
             height={`${height}px`}
             theme="vs"
-            language="json"
+            language={language}
             value={value}
             onChange={(e) => {
               onChange(e);
             }}
             options={{
-              readOnly: false,
+              readOnly,
               automaticLayout: true,
               folding: true,
               wordWrap: "on",
@@ -34,3 +36,8 @@ export const JsonInput: React.FC<{
     </AutoSizer>
   );
 };
+
+export const JsonInput: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+}> = (props) => <CodeInput {...props} language="json" />;

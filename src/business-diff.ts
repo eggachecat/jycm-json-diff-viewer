@@ -43,6 +43,28 @@ export type BusinessDiffSummary = {
   violations: Array<Record<string, any>>;
 };
 
+export type BusinessFunctionContext = {
+  path: string;
+  pointer: string;
+  left: unknown;
+  right: unknown;
+  leftExists: boolean;
+  rightExists: boolean;
+};
+
+export type BusinessFunctionDecision = {
+  equal: boolean;
+  reason?: string;
+  severity?: "info" | "warning" | "error";
+};
+
+export type BusinessDiffFunction = (
+  context: BusinessFunctionContext,
+) => boolean | BusinessFunctionDecision | null | undefined;
+
+export type BusinessFunctionEvaluation = BusinessFunctionDecision &
+  BusinessFunctionContext;
+
 const operationAliases: Record<string, string> = {
   ignore: "ignore",
   unordered: "unordered",
@@ -77,6 +99,35 @@ export class BusinessPolicyError extends Error {
     Object.setPrototypeOf(this, BusinessPolicyError.prototype);
   }
 }
+
+export class BusinessFunctionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BusinessFunctionError";
+    Object.setPrototypeOf(this, BusinessFunctionError.prototype);
+  }
+}
+
+export const compileBusinessFunction = (
+  source: string,
+): BusinessDiffFunction => {
+  let candidate: unknown;
+  try {
+    candidate = new Function(`"use strict"; return (${source});`)();
+  } catch (error) {
+    throw new BusinessFunctionError(
+      `JavaScript could not compile: ${
+        error instanceof Error ? error.message : "unknown syntax error"
+      }`,
+    );
+  }
+  if (typeof candidate !== "function") {
+    throw new BusinessFunctionError(
+      "JavaScript must evaluate to a function or arrow function",
+    );
+  }
+  return candidate as BusinessDiffFunction;
+};
 
 class PolicyOperator {
   path_regex: string;
@@ -512,6 +563,16 @@ export const makeJsonPatch = (
         .sort()
         .forEach((key) => {
           const path = joinPointer(pointer, key);
+          if (
+            equivalent?.(
+              leftValue[key],
+              PLACE_HOLDER_NON_EXIST,
+              [...leftPath, key],
+              [...rightPath, key],
+            )
+          ) {
+            return;
+          }
           addTest(path, leftValue[key]);
           operations.push({ op: "remove", path });
         });
@@ -530,13 +591,23 @@ export const makeJsonPatch = (
       rightKeys
         .filter((key) => !leftKeys.includes(key))
         .sort()
-        .forEach((key) =>
+        .forEach((key) => {
+          if (
+            equivalent?.(
+              PLACE_HOLDER_NON_EXIST,
+              rightValue[key],
+              [...leftPath, key],
+              [...rightPath, key],
+            )
+          ) {
+            return;
+          }
           operations.push({
             op: "add",
             path: joinPointer(pointer, key),
             value: cloneValue(rightValue[key]),
-          }),
-        );
+          });
+        });
       return;
     }
     if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
@@ -552,10 +623,30 @@ export const makeJsonPatch = (
       }
       for (let index = leftValue.length - 1; index >= shared; index -= 1) {
         const path = joinPointer(pointer, index);
+        if (
+          equivalent?.(
+            leftValue[index],
+            PLACE_HOLDER_NON_EXIST,
+            [...leftPath, index],
+            [...rightPath, index],
+          )
+        ) {
+          continue;
+        }
         addTest(path, leftValue[index]);
         operations.push({ op: "remove", path });
       }
       for (let index = shared; index < rightValue.length; index += 1) {
+        if (
+          equivalent?.(
+            PLACE_HOLDER_NON_EXIST,
+            rightValue[index],
+            [...leftPath, index],
+            [...rightPath, index],
+          )
+        ) {
+          continue;
+        }
         operations.push({
           op: "add",
           path: joinPointer(pointer, index),
@@ -691,6 +782,8 @@ export const applyJsonPatch = (
 export const makeSemanticJsonPatch = (
   differ: YouchamaJsonDiffer,
   includeTests = false,
+  businessFunction?: BusinessDiffFunction,
+  onEvaluation?: (evaluation: BusinessFunctionEvaluation) => void,
 ) => {
   const patchContext = Object.create(differ) as YouchamaJsonDiffer;
   patchContext.report = () => undefined;
@@ -699,6 +792,50 @@ export const makeSemanticJsonPatch = (
     differ.right,
     (left, right, leftPath, rightPath) => {
       const level = new TreeLevel(left, right, leftPath, rightPath, null);
+      if (businessFunction) {
+        const leftExists = left !== PLACE_HOLDER_NON_EXIST;
+        const rightExists = right !== PLACE_HOLDER_NON_EXIST;
+        const context: BusinessFunctionContext = Object.freeze({
+          path: level.get_path(),
+          pointer: rightPath.length
+            ? "/" + rightPath.map((token) => escapeToken(token)).join("/")
+            : "",
+          left: leftExists ? cloneValue(left) : undefined,
+          right: rightExists ? cloneValue(right) : undefined,
+          leftExists,
+          rightExists,
+        });
+        let rawDecision: ReturnType<BusinessDiffFunction>;
+        try {
+          rawDecision = businessFunction(context);
+        } catch (error) {
+          throw new BusinessFunctionError(
+            `JavaScript failed at ${context.path || "root"}: ${
+              error instanceof Error ? error.message : "unknown runtime error"
+            }`,
+          );
+        }
+        if (rawDecision !== undefined && rawDecision !== null) {
+          const decision =
+            typeof rawDecision === "boolean"
+              ? { equal: rawDecision }
+              : rawDecision;
+          if (
+            !decision ||
+            typeof decision !== "object" ||
+            typeof decision.equal !== "boolean"
+          ) {
+            throw new BusinessFunctionError(
+              `JavaScript must return boolean, { equal, reason? }, or undefined at ${
+                context.path || "root"
+              }`,
+            );
+          }
+          const evaluation = { ...context, ...decision };
+          onEvaluation?.(evaluation);
+          return decision.equal;
+        }
+      }
       for (const operator of differ.custom_operators) {
         if (operator.match(level)) {
           const { skip, score } = operator.diff(level, patchContext, false);

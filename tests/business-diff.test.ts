@@ -1,7 +1,9 @@
 import {
   BusinessDiffPolicy,
+  BusinessFunctionError,
   BusinessPolicyError,
   applyJsonPatch,
+  compileBusinessFunction,
   makeSemanticJsonPatch,
   summarizeBusinessDiff,
 } from "../src/business-diff";
@@ -60,6 +62,73 @@ describe("business diff integration", () => {
       created: true,
     });
     expect(document.source.value).toBe(1);
+  });
+
+  test("lets a JavaScript function change semantic Patch output", () => {
+    const scenario = demoScenarios.find(
+      (candidate) => candidate.id === "custom-javascript",
+    )!;
+    const policy = new BusinessDiffPolicy(scenario.policy as any);
+    const differ = policy.build(scenario.before, scenario.after);
+    differ.diff();
+    const evaluations: any[] = [];
+    const patch = makeSemanticJsonPatch(
+      differ,
+      false,
+      compileBusinessFunction(scenario.businessFunction),
+      (evaluation) => evaluations.push(evaluation),
+    );
+
+    expect(patch).toEqual([
+      { op: "replace", path: "/status", value: "approved" },
+    ]);
+    expect(evaluations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "generated_at", equal: true }),
+        expect.objectContaining({ path: "total", equal: true }),
+      ]),
+    );
+  });
+
+  test("validates custom JavaScript function source and return values", () => {
+    expect(() => compileBusinessFunction("not valid javascript (")).toThrow(
+      BusinessFunctionError,
+    );
+    expect(() => compileBusinessFunction("({})")).toThrow(
+      "must evaluate to a function",
+    );
+
+    const policy = new BusinessDiffPolicy({ version: 1, rules: [] });
+    const differ = policy.build({ value: 1 }, { value: 2 });
+    differ.diff();
+    expect(() =>
+      makeSemanticJsonPatch(
+        differ,
+        false,
+        compileBusinessFunction("() => ({ reason: 'missing equal' })"),
+      ),
+    ).toThrow("must return boolean");
+  });
+
+  test("lets JavaScript decide added and removed paths", () => {
+    const policy = new BusinessDiffPolicy({ version: 1, rules: [] });
+    const differ = policy.build({ removed: 1 }, { added: 2 });
+    differ.diff();
+    const evaluations: any[] = [];
+    const patch = makeSemanticJsonPatch(
+      differ,
+      false,
+      ({ leftExists, rightExists }) => !leftExists || !rightExists,
+      (evaluation) => evaluations.push(evaluation),
+    );
+
+    expect(patch).toEqual([]);
+    expect(evaluations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "removed", rightExists: false }),
+        expect.objectContaining({ path: "added", leftExists: false }),
+      ]),
+    );
   });
 
   test("rejects invalid policy versions and malformed identity rules", () => {
