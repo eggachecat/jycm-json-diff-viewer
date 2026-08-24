@@ -109,7 +109,7 @@ function SemanticDiffWorkspace() {
   const [businessFunctionEnabled, setBusinessFunctionEnabled] = useState(true);
   const [activeScenario, setActiveScenario] = useState(firstScenario.id);
   const [includeTests, setIncludeTests] = useState(false);
-  const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(false);
+  const [diffView, setDiffView] = useState<"split" | "unified">("split");
   const [error, setError] = useState<string | null>(null);
   const [comparison, setComparison] = useState<ValidComparison>(() =>
     compare(
@@ -324,6 +324,65 @@ function SemanticDiffWorkspace() {
           >
             <JsonInput value={rightInput} onChange={setRightInput} />
           </EditorCard>
+        </div>
+
+        <section className="inline-diff-preview" aria-labelledby="visual-title">
+          <div className="inline-diff-header">
+            <div>
+              <p className="eyebrow">Live visual diff</p>
+              <h3 id="visual-title">Render</h3>
+              <p>
+                The original JYCM split viewer is restored directly below the
+                Before and After editors.
+              </p>
+            </div>
+            <div className="diff-view-switcher" aria-label="Diff view mode">
+              <button
+                type="button"
+                className={diffView === "split" ? "active" : undefined}
+                aria-pressed={diffView === "split"}
+                onClick={() => setDiffView("split")}
+              >
+                Split view
+              </button>
+              <button
+                type="button"
+                className={diffView === "unified" ? "active" : undefined}
+                aria-pressed={diffView === "unified"}
+                onClick={() => setDiffView("unified")}
+              >
+                Unified Git diff
+              </button>
+            </div>
+          </div>
+          <div className="diff-legend" aria-label="Diff color legend">
+            <span className="diff-legend__removed">− Removed / before</span>
+            <span className="diff-legend__added">+ Added / after</span>
+            <span className="diff-legend__ignored">Ignored by policy</span>
+          </div>
+          {diffView === "split" ? (
+            <JYCMContext.Provider value={context}>
+              <div className="viewer-layout">
+                <div className="viewer-main">
+                  <JYCMRender leftTitle="− Before" rightTitle="+ After" />
+                </div>
+                <aside
+                  className="detail-panel"
+                  aria-label="Selected diff detail"
+                >
+                  <div className="panel-heading">Selected change</div>
+                  <div className="detail-editor">
+                    <DiffDetailViewer />
+                  </div>
+                </aside>
+              </div>
+            </JYCMContext.Provider>
+          ) : (
+            <GitDiffViewer before={comparison.left} after={comparison.right} />
+          )}
+        </section>
+
+        <div className="input-grid input-grid--configuration">
           <EditorCard
             title="Business policy"
             subtitle="Versioned, portable, JSON-serializable rules"
@@ -461,61 +520,6 @@ function SemanticDiffWorkspace() {
             </div>
           </article>
         </div>
-      </section>
-
-      <section className="visual-section" aria-labelledby="visual-title">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Git-style visual diff</p>
-            <h2 id="visual-title">
-              See every removed line in red and every added line in green.
-            </h2>
-          </div>
-          <div className="diff-legend" aria-label="Diff color legend">
-            <span className="diff-legend__removed">− Removed / before</span>
-            <span className="diff-legend__added">+ Added / after</span>
-            <span className="diff-legend__ignored">Ignored by policy</span>
-          </div>
-        </div>
-        <p className="visual-guidance">
-          This renderer owns its colors instead of depending on editor-theme
-          decorations. Modified values are always a red removal followed by a
-          green addition, while unchanged blocks collapse automatically.
-        </p>
-        <GitDiffViewer before={comparison.left} after={comparison.right} />
-        <details
-          className="advanced-inspector"
-          open={advancedInspectorOpen}
-          onToggle={(event) =>
-            setAdvancedInspectorOpen(event.currentTarget.open)
-          }
-        >
-          <summary>Open paired-path inspector</summary>
-          {advancedInspectorOpen && (
-            <>
-              <p>
-                Explore JYCM&apos;s synchronized tree paths and click a line for
-                the raw event payload.
-              </p>
-              <JYCMContext.Provider value={context}>
-                <div className="viewer-layout">
-                  <div className="viewer-main">
-                    <JYCMRender leftTitle="− Before" rightTitle="+ After" />
-                  </div>
-                  <aside
-                    className="detail-panel"
-                    aria-label="Selected diff detail"
-                  >
-                    <div className="panel-heading">Selected change</div>
-                    <div className="detail-editor">
-                      <DiffDetailViewer />
-                    </div>
-                  </aside>
-                </div>
-              </JYCMContext.Provider>
-            </>
-          )}
-        </details>
       </section>
 
       <section className="patch-section" aria-labelledby="patch-title">

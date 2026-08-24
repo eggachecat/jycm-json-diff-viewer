@@ -22,12 +22,12 @@ executable JSON Patch, machine-readable events, and Git-style visual diff.
 - semantic RFC 6902 generation with optional safety tests
 - standalone Patch exploration with operation filters, pointer search, copy,
   download, apply preview, and semantic verification
-- a first-class line diff with guaranteed red removals, green additions,
-  line numbers, context folding, and full-document expansion
+- an original-style split Before/After renderer directly below the document
+  editors, plus a switchable unified Git diff with line numbers and folding
 - collapsible Before, After, policy, JavaScript, and raw-event editors
 - path-level JavaScript functions whose boolean or structured decisions change
   semantic equality, explanations, and generated Patch output immediately
-- optional aligned before/after navigation for advanced paired-path inspection
+- default aligned before/after navigation with clickable paired-path details
 - live validation that keeps the latest valid comparison visible while editing
 - Codex, Claude, and project-agent installation commands for the portable
   JYCM Business Diff Skill
