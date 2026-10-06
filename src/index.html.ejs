@@ -50,6 +50,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <section aria-labelledby="jycm-guide-title" style="max-width: 960px; margin: 2rem auto; padding: 1rem; font-family: system-ui, sans-serif; line-height: 1.6;">
+      <h2 id="jycm-guide-title">Compare JSON with business rules</h2>
+      <p>JYCM is a JSON comparison tool family for Python, JavaScript, and React.
+        Use the playground above to compare two documents, configure rules,
+        inspect changes, and explore a semantic JSON Patch.</p>
+      <h3>How do I ignore JSON array order?</h3>
+      <p>Apply an unordered rule to the selected array path. Other arrays retain
+        their normal ordering behavior. For records, add a match-by rule with a stable identity field.</p>
+      <h3>How do I ignore fields or allow numeric differences?</h3>
+      <p>Use an ignore rule for volatile fields such as trace IDs. Use numeric
+        tolerance for acceptable rounding differences. Scope rules narrowly so meaningful changes remain visible.</p>
+      <h3>Does JSON Patch reproduce the target exactly?</h3>
+      <p>A semantic patch preserves source values declared equivalent by your
+        rules. Ignored fields and tolerated values may remain different from the target.</p>
+      <h3>Use JYCM in your application</h3>
+      <ul>
+        <li><a href="https://github.com/eggachecat/jycm">Python JSON diff engine and CLI</a></li>
+        <li><a href="https://github.com/eggachecat/jycm-js">JavaScript and TypeScript engine (npm package: jycm)</a></li>
+        <li><a href="https://github.com/eggachecat/react-jycm-viewer">React JSON diff and JSON Patch viewers</a></li>
+        <li><a href="https://github.com/eggachecat/jycm/tree/master/docs/source/guides">Task guides and runnable examples</a></li>
+      </ul>
+      <p>The documentation describes current source branches. Verify installed
+        package capabilities and test your own fixtures before integrating.</p>
+    </section>
 
     <!-- Dependencies -->
     <% if (webpackConfig.mode == 'production') { %>
